@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, Calendar, FileText, AlertCircle, Info, CheckCheck, Play, Clock, Phone } from 'lucide-react'
@@ -15,6 +15,17 @@ import { priorityBadgeClasses } from '@/utils/statusColors'
 import { formatDateTime, isOverdue } from '@/utils/formatDate'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { MOCK_TASKS } from '@/lib/mock-data'
+import Image from 'next/image'
+
+export function generateStaticParams() {
+  return MOCK_TASKS.map((task) => ({
+    id: task.id,
+  }))
+}
+
+export const dynamicParams = false
+
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,7 +39,7 @@ export default function TaskDetailPage() {
   const [workNote, setWorkNote] = useState('')
   const [photos, setPhotos] = useState<TaskPhoto[]>([])
 
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     if (!id || !worker?.id) return
     setLoading(true)
     try {
@@ -40,9 +51,9 @@ export default function TaskDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, worker?.id])
 
-  useEffect(() => { loadDetail() }, [id, worker?.id])
+  useEffect(() => { loadDetail() }, [loadDetail])
 
   if (loading) return <LoadingSpinner />
   if (!detail) return (

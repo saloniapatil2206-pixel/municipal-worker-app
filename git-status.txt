@@ -1,0 +1,60 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .next/app-build-manifest.json
+	modified:   .next/cache/webpack/client-development/0.pack.gz
+	modified:   .next/cache/webpack/client-development/2.pack.gz
+	modified:   .next/cache/webpack/client-development/4.pack.gz
+	modified:   .next/cache/webpack/client-development/5.pack.gz
+	modified:   .next/cache/webpack/client-development/6.pack.gz
+	modified:   .next/cache/webpack/client-development/7.pack.gz
+	modified:   .next/cache/webpack/client-development/8.pack.gz
+	modified:   .next/cache/webpack/client-development/index.pack.gz
+	modified:   .next/cache/webpack/client-development/index.pack.gz.old
+	modified:   .next/cache/webpack/edge-server-development/0.pack.gz
+	modified:   .next/cache/webpack/edge-server-development/index.pack.gz
+	modified:   .next/cache/webpack/edge-server-development/index.pack.gz.old
+	modified:   .next/cache/webpack/server-development/0.pack.gz
+	modified:   .next/cache/webpack/server-development/1.pack.gz_
+	modified:   .next/cache/webpack/server-development/2.pack.gz
+	modified:   .next/cache/webpack/server-development/3.pack.gz
+	modified:   .next/cache/webpack/server-development/index.pack.gz.old
+	modified:   .next/cache/webpack/server-development/index.pack.gz_
+	modified:   .next/react-loadable-manifest.json
+	modified:   .next/server/app-paths-manifest.json
+	modified:   .next/server/app/(protected)/calendar/page_client-reference-manifest.js
+	modified:   .next/server/app/(protected)/home/page_client-reference-manifest.js
+	modified:   .next/server/app/(protected)/profile/page_client-reference-manifest.js
+	modified:   .next/server/app/(protected)/tasks/[id]/page_client-reference-manifest.js
+	modified:   .next/server/app/(protected)/tasks/page_client-reference-manifest.js
+	modified:   .next/server/app/page_client-reference-manifest.js
+	modified:   .next/server/middleware-manifest.json
+	modified:   .next/server/middleware-react-loadable-manifest.js
+	modified:   .next/server/server-reference-manifest.json
+	modified:   .next/server/vendor-chunks/lucide-react.js
+	modified:   .next/server/webpack-runtime.js
+	modified:   .next/static/chunks/app/layout.js
+	modified:   .next/static/chunks/webpack.js
+	deleted:    .next/static/webpack/1c9f2df7f943d6f8.webpack.hot-update.json
+	deleted:    .next/static/webpack/28d6df4dd41c3aca.webpack.hot-update.json
+	deleted:    .next/static/webpack/7827b5d32727d2d2.webpack.hot-update.json
+	deleted:    .next/static/webpack/app/layout.bc2aebc06562abac.hot-update.js
+	deleted:    .next/static/webpack/b98e25527f790776.webpack.hot-update.json
+	deleted:    .next/static/webpack/bc2aebc06562abac.webpack.hot-update.json
+	deleted:    .next/static/webpack/e396472c72499022.webpack.hot-update.json
+	deleted:    .next/static/webpack/webpack.1c9f2df7f943d6f8.hot-update.js
+	deleted:    .next/static/webpack/webpack.28d6df4dd41c3aca.hot-update.js
+	deleted:    .next/static/webpack/webpack.7827b5d32727d2d2.hot-update.js
+	deleted:    .next/static/webpack/webpack.b98e25527f790776.hot-update.js
+	deleted:    .next/static/webpack/webpack.bc2aebc06562abac.hot-update.js
+	deleted:    .next/static/webpack/webpack.e396472c72499022.hot-update.js
+	modified:   .next/trace
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	git-status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

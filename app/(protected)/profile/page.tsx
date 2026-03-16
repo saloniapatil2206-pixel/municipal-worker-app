@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { User, Phone, Mail, Building, MapPin, Hash, Shield, Camera, Edit2, Save, X } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { MOCK_PROFILE, MOCK_WORKER } from '@/lib/mock-data'
+import Image from 'next/image'
+
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
@@ -126,10 +128,11 @@ export default function ProfilePage() {
       <div className="flex flex-col items-center mb-6">
         <div className="relative w-24 h-24 rounded-full bg-[#0F4C81] flex items-center justify-center mb-3">
           {profile.profile_photo ? (
-            <img
+            <Image
               src={profile.profile_photo}
               alt="Profile"
-              className="w-24 h-24 rounded-full object-cover"
+              fill
+              className="rounded-full object-cover"
             />
           ) : (
             <User size={40} className="text-white" />

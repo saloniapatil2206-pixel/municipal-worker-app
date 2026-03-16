@@ -87,7 +87,7 @@ export default function PhotoUpload({ taskId, workerId, photoType, existingPhoto
         {/* Preview */}
         {preview && (
           <div className="relative w-full h-40 rounded-lg overflow-hidden mb-2">
-            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+            <Image src={preview} alt="Preview" fill className="object-cover" />
           </div>
         )}
 
