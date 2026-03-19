@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { MOCK_WORKER, MOCK_PROFILE } from '@/lib/mock-data'
 
 export function useAuth() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -34,7 +36,7 @@ export function useAuth() {
 
   const logout = async () => {
     localStorage.removeItem('mock_session')
-    window.location.href = '/login'
+    router.replace('/')
   }
 
   return { session, profile, worker, loading, logout }

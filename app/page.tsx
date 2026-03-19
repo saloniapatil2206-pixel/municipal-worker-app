@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast, { Toaster } from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, HardHat } from 'lucide-react'
 
 const schema = z.object({
@@ -48,6 +49,7 @@ async function loginWorker(email: string, password: string) {
 }
 
 export default function LoginPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -75,7 +77,7 @@ export default function LoginPage() {
 
       setTimeout(() => {
         console.log('Executing redirect now...')
-        window.location.replace('/home')
+        router.replace('/home')
       }, 800)
 
     } catch (error: any) {
