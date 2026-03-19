@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  // GitHub Pages handles repositories with 'repo-name' as a subpath
-  basePath: '/municipal-worker-app',
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   images: {
     unoptimized: true, // Required for static export
     remotePatterns: [

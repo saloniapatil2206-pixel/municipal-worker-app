@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
@@ -34,11 +34,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string>(fmt(today))
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadTasks()
-  }, [year, month])
-
-  async function loadTasks() {
+  const loadTasks = useCallback(async () => {
     try {
       setLoading(true)
       const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
@@ -68,7 +64,11 @@ export default function CalendarPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [year, month, today])
+
+  useEffect(() => {
+    loadTasks()
+  }, [year, month, loadTasks])
 
   function prevMonth() {
     if (month === 1) { setYear(y => y - 1); setMonth(12) }

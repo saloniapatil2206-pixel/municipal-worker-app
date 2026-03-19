@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[141],{2141:function(e,s,t){t.r(s),t.d(s,{supabase:function(){return n}});let n=(0,t(4033).createBrowserClient)("https://placeholder.supabase.co","placeholder_key_not_needed")}}]);

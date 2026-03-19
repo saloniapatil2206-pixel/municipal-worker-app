@@ -37,6 +37,15 @@ export interface Task {
   status: TaskStatus
   admin_note: string | null
   citizen_complaint_ref: string | null
+  assigned_worker_id: string | null
+  before_photo_url: string | null
+  before_photo_metadata: any | null
+  before_photo_taken_at: string | null
+  after_photo_url: string | null
+  after_photo_metadata: any | null
+  after_photo_taken_at: string | null
+  resolved_at: string | null
+  resolution_notes: string | null
   created_at: string
   updated_at: string
 }

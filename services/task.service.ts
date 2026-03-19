@@ -41,10 +41,32 @@ export async function fetchTaskById(taskId: string, workerId: string): Promise<T
   if (isMock()) {
     const task = MOCK_TASKS.find(t => t.id === taskId)
     if (!task) throw new Error('Task not found')
+    const photos: any[] = []
+    if (task.before_photo_url) {
+      photos.push({
+        id: 'p-before',
+        task_id: taskId,
+        worker_id: workerId,
+        photo_url: task.before_photo_url,
+        photo_type: 'before',
+        created_at: task.before_photo_taken_at || task.created_at
+      })
+    }
+    if (task.after_photo_url) {
+      photos.push({
+        id: 'p-after',
+        task_id: taskId,
+        worker_id: workerId,
+        photo_url: task.after_photo_url,
+        photo_type: 'after',
+        created_at: task.after_photo_taken_at || task.updated_at
+      })
+    }
+
     return {
       ...task,
       updates: MOCK_TASK_UPDATES[taskId] || [],
-      photos: []
+      photos
     }
   }
   const { supabase } = await import('@/lib/supabase')
