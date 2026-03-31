@@ -16,36 +16,65 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 async function loginWorker(email: string, password: string) {
-  const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+  // Always use real Supabase login for database workers
+  console.log('Authenticating with Supabase...')
+  console.log('Input:', email)
 
-  console.log('MOCK MODE:', isMock)
-  console.log('Email entered:', email)
-
-  if (isMock) {
-    if (email === 'worker@demo.com' && password === 'demo123') {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          'mock_session',
-          JSON.stringify({ user: { id: 'mock-user-001', email } })
-        )
-      }
-      return { success: true }
-    }
-    throw new Error('Invalid credentials. Use worker@demo.com / demo123')
-  }
-
-  // Real Supabase login (only used when MOCK_MODE is false)
   const { createBrowserClient } = await import('@supabase/ssr')
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
   )
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+
+  const usernamePart = email.split('@')[0].toLowerCase()
+
+  // First, find profiles by password to avoid excessive Supabase Auth overhead for workers
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('password', password)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  // Find a profile that matches by email prefix, full email, username, or full name
+  const matchedProfile = profiles?.find((p: any) => {
+    const pEmail = (p.email || '').toLowerCase()
+    const pUsername = (p.username || '').toLowerCase()
+    const pName = (p.full_name || p.name || '').toLowerCase()
+    const inputLc = email.toLowerCase()
+
+    return (
+      pEmail === inputLc ||
+      pUsername === inputLc ||
+      pUsername === usernamePart ||
+      pName === inputLc ||
+      pName === usernamePart
+    )
   })
-  if (error) throw new Error(error.message)
-  return data
+
+  if (!matchedProfile) {
+    throw new Error('Invalid credentials. Please check your username and password.')
+  }
+
+  // Store the custom session in localStorage to bypass missing Supabase Auth
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(
+      'mock_session',
+      JSON.stringify({
+        user: {
+          id: matchedProfile.id,
+          username: matchedProfile.username,
+          full_name: matchedProfile.full_name,
+          role: matchedProfile.role,
+          assigned_zone: matchedProfile.assigned_zone
+        }
+      })
+    )
+  }
+
+  return { success: true, user: matchedProfile }
 }
 
 export default function LoginPage() {
@@ -65,18 +94,10 @@ export default function LoginPage() {
     try {
       setLoading(true)
       console.log('=== LOGIN STARTED ===')
-      console.log('Email:', data.email)
-      console.log('Mock mode:', process.env.NEXT_PUBLIC_MOCK_MODE)
-
       await loginWorker(data.email, data.password)
-
       console.log('=== LOGIN SUCCESS ===')
-      console.log('Redirecting to /home...')
-
       toast.success('Login successful! Redirecting...')
-
       setTimeout(() => {
-        console.log('Executing redirect now...')
         router.replace('/home')
       }, 800)
 
@@ -97,7 +118,7 @@ export default function LoginPage() {
           <HardHat className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-3xl font-bold text-white tracking-tight">MuniWork</h1>
-        <p className="text-white/70 text-sm mt-1">Municipal Maintenance Worker App</p>
+        <p className="text-white/70 text-sm mt-1">Municipal Field Staff App</p>
       </div>
 
       {/* Card */}
@@ -115,7 +136,7 @@ export default function LoginPage() {
             <input
               type="email"
               autoComplete="email"
-              placeholder="worker@demo.com"
+              placeholder="worker@nagarsevak.com"
               className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#0F4C81] transition ${errors.email ? 'border-red-400' : 'border-gray-300'
                 }`}
               {...register('email')}

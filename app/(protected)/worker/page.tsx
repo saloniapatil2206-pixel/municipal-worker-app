@@ -78,8 +78,8 @@ export default function WorkerPage() {
               {workerProfile?.full_name?.charAt(0) || 'W'}
             </div>
             <div>
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Worker Dashboard</p>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">{workerProfile?.full_name || 'Worker'}</h1>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Field Staff Dashboard</p>
+              <h1 className="text-xl font-bold text-gray-900 leading-tight">{workerProfile?.full_name || 'Staff'}</h1>
             </div>
           </div>
           <button className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-red-500 transition-colors border border-gray-100">

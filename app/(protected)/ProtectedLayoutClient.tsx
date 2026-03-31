@@ -37,7 +37,7 @@ export default function ProtectedLayoutClient({ children }: { children: React.Re
           <div className="w-8 h-8 bg-[#0F4C81] rounded-xl flex items-center justify-center">
             <HardHat size={18} className="text-white" />
           </div>
-          <span className="text-base font-bold text-[#0F4C81] tracking-tight">MuniWork</span>
+          <span className="text-base font-bold text-[#0F4C81] tracking-tight">FieldStaff</span>
         </div>
         <Link href="/notifications" className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors">
           <Bell size={22} className="text-gray-600" />

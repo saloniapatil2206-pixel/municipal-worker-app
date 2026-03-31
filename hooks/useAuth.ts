@@ -28,7 +28,15 @@ export function useAuth() {
     // Real Supabase session check
     import('@/lib/supabase').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data }) => {
-        setSession(data.session)
+        if (data.session) {
+          setSession(data.session)
+        } else {
+          // Check local custom session for backwards compatibility
+          const stored = localStorage.getItem('mock_session')
+          if (stored) {
+            setSession(JSON.parse(stored))
+          }
+        }
         setLoading(false)
       })
     })

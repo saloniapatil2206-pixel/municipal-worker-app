@@ -7,7 +7,7 @@ export async function loginWorker(email: string, password: string) {
     if (email === 'worker@demo.com' && password === 'demo123') {
       if (typeof window !== 'undefined') {
         localStorage.setItem('mock_session', JSON.stringify({
-          user: { id: 'mock-user-001', email }
+          user: { id: 'mock-user-001', email, username: 'worker', role: 'field_staff', assigned_zone: 'Zone A' }
         }))
       }
       return { success: true }
@@ -16,9 +16,36 @@ export async function loginWorker(email: string, password: string) {
   }
 
   const { supabase } = await import('@/lib/supabase')
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  
+  const usernamePart = email.split('@')[0]
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('password', password)
+
   if (error) throw new Error(error.message)
-  return data
+
+  const matchedProfile = profiles?.find(
+    (p: any) => p.email === email || p.username === usernamePart
+  )
+
+  if (!matchedProfile) throw new Error('Invalid login credentials')
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(
+      'mock_session',
+      JSON.stringify({
+        user: {
+          id: matchedProfile.id,
+          username: matchedProfile.username,
+          role: matchedProfile.role,
+          assigned_zone: matchedProfile.assigned_zone
+        }
+      })
+    )
+  }
+
+  return { user: matchedProfile }
 }
 
 export async function logoutWorker() {
@@ -38,7 +65,14 @@ export async function getCurrentSession() {
   }
   const { supabase } = await import('@/lib/supabase')
   const { data } = await supabase.auth.getSession()
-  return data.session
+  
+  if (data.session) return data.session
+  
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('mock_session')
+    return stored ? JSON.parse(stored) : null
+  }
+  return null
 }
 
 export async function getCurrentWorkerProfile(userId?: string) {

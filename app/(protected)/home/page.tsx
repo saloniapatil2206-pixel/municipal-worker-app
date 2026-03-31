@@ -11,7 +11,7 @@ export default function HomePage() {
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-  const [workerName, setWorkerName] = useState('Worker')
+  const [workerName, setWorkerName] = useState('Staff')
 
   useEffect(() => {
     loadData()
@@ -23,7 +23,7 @@ export default function HomePage() {
       const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
       if (isMock) {
         setTasks(MOCK_TASKS)
-        setWorkerName(MOCK_PROFILE.full_name || 'Worker')
+        setWorkerName(MOCK_PROFILE.full_name || 'Staff')
         return
       }
       const { fetchAssignedTasks } = await import('@/services/task.service')

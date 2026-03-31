@@ -3,8 +3,8 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
-  title: 'MuniWork – Municipal Maintenance Worker App',
-  description: 'AI-Based Municipal Maintenance Scheduler for field workers',
+  title: 'FieldStaff – Municipal Field Staff App',
+  description: 'AI-Based Municipal Maintenance Scheduler for field staff',
 }
 
 export const viewport = {
