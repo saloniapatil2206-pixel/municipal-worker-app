@@ -1,0 +1,21 @@
+{
+  "name": "FieldStaff – Municipal Worker App",
+  "short_name": "FieldStaff",
+  "description": "AI-Based Municipal Maintenance Scheduler for field staff",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F4C81",
+  "theme_color": "#0F4C81",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+}

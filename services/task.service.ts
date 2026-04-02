@@ -33,19 +33,22 @@ export async function fetchAssignedTasks(workerId: string): Promise<Task[]> {
   if (!isUUID) return []
 
   const { data: profile } = await supabase.from('profiles').select('sector, assigned_zone').eq('id', workerId).single()
-  const workerSector = profile?.sector || profile?.assigned_zone
 
-  const { data: tasksData, error: tasksError } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('staff_id', workerId)
-
+  let tasksQuery = supabase.from('tasks').select('*')
   let issuesQuery = supabase.from('issues').select('*')
-  if (workerSector) {
-    issuesQuery = issuesQuery.or(`assigned_to.eq.${workerId},sector.eq.${workerSector}`)
+
+  if (profile?.sector && profile?.assigned_zone) {
+    // Tasks: staff_id = workerId OR (sector = workerSector AND assigned_zone = workerZone)
+    tasksQuery = tasksQuery.or(`staff_id.eq.${workerId},and(sector.eq.${profile.sector},assigned_zone.eq.${profile.assigned_zone})`)
+    // Issues: assigned_to = workerId OR (sector = workerSector AND assigned_zone = workerZone)
+    issuesQuery = issuesQuery.or(`assigned_to.eq.${workerId},and(sector.eq.${profile.sector},assigned_zone.eq.${profile.assigned_zone})`)
   } else {
+    // Fallback if no sector AND zone: Only fetch personal explicitly assigned tasks
+    tasksQuery = tasksQuery.eq('staff_id', workerId)
     issuesQuery = issuesQuery.eq('assigned_to', workerId)
   }
+
+  const { data: tasksData, error: tasksError } = await tasksQuery
   const { data: issuesData, error: issuesError } = await issuesQuery
 
   if (tasksError) throw new Error(tasksError.message)

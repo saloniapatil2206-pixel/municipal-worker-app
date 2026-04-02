@@ -41,7 +41,7 @@ export async function fetchCalendarTasks(
   const grouped: { [date: string]: Task[] } = {}
   
   allTasks.forEach((task: any) => {
-    const rawDate = task.scheduled_date || task.due_at || task.created_at
+    const rawDate = task.scheduled_start || task.scheduled_date || task.due_at || task.created_at
     if (!rawDate) return
     
     // Convert timestamp to YYYY-MM-DD
