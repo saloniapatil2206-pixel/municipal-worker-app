@@ -67,8 +67,8 @@ export default function ReportPage() {
 
   const metrics = [
     { label: 'Total Assigned', value: report.total_assigned, color: 'bg-blue-50 text-blue-600', icon: <Calendar className="w-5 h-5" />, filter: 'all' },
+    { label: 'Under Review', value: report.total_under_review || 0, color: 'bg-purple-50 text-purple-600', icon: <Clock className="w-5 h-5" />, filter: 'pending_review' },
     { label: 'Completed', value: report.total_completed, color: 'bg-green-50 text-green-600', icon: <CheckCircle className="w-5 h-5" />, filter: 'completed' },
-    { label: 'Pending', value: report.total_pending, color: 'bg-amber-50 text-amber-600', icon: <Clock className="w-5 h-5" />, filter: 'pending' },
     { label: 'Delayed', value: report.total_delayed, color: 'bg-red-50 text-red-600', icon: <AlertCircle className="w-5 h-5" />, filter: 'delayed' },
   ]
 
@@ -125,11 +125,49 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {/* Recent Under Review */}
+      {report.recent_under_review?.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold text-gray-700">Pending Review</h2>
+            <button
+              onClick={() => router.push('/tasks?filter=pending_review')}
+              className="text-xs text-purple-500 font-medium"
+            >
+              View all
+            </button>
+          </div>
+          <div className="space-y-2">
+            {report.recent_under_review.slice(0, 3).map((task: any) => {
+              const t = task.task || task
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => router.push(`/tasks/${t.id}`)}
+                  className="bg-white rounded-xl p-3 border border-purple-100 shadow-sm cursor-pointer flex items-center justify-between active:bg-purple-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{t.title}</p>
+                      <p className="text-xs text-purple-400">{t.category}</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-300" />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Recent Completed */}
       {report.recent_completed?.length > 0 && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Recently Completed</h2>
+            <h2 className="text-sm font-semibold text-gray-700">Recently Approved/Completed</h2>
             <button
               onClick={() => router.push('/tasks?filter=completed')}
               className="text-xs text-[#0F4C81] font-medium"
@@ -215,12 +253,14 @@ export default function ReportPage() {
                 <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
                 <p className="text-xs text-gray-400">{task.category} · {task.due_at ? new Date(task.due_at).toLocaleDateString('en-IN') : '—'}</p>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                task.status === 'delayed' ? 'bg-red-100 text-red-700' :
-                  task.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
-                    task.status === 'accepted' ? 'bg-indigo-100 text-indigo-700' :
-                      'bg-blue-100 text-blue-700'
-                }`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                task.status === 'completed' || task.status === 'approved' || task.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                task.status === 'pending_review' ? 'bg-purple-100 text-purple-700' :
+                task.status === 'delayed' || task.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                task.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
+                task.status === 'accepted' ? 'bg-indigo-100 text-indigo-700' :
+                'bg-blue-100 text-blue-700'
+              }`}>
                 {task.status.replace('_', ' ')}
               </span>
             </div>

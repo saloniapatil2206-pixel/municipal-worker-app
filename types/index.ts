@@ -18,7 +18,7 @@ export interface Worker {
   profile?: Profile
 }
 
-export type TaskStatus = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'delayed'
+export type TaskStatus = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'delayed' | 'pending_review' | 'approved' | 'rejected'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical'
 
 export interface Task {
@@ -37,7 +37,7 @@ export interface Task {
   status: TaskStatus
   admin_note: string | null
   citizen_complaint_ref: string | null
-  assigned_worker_id: string | null
+  staff_id: string | null
   before_photo_url: string | null
   before_photo_metadata: any | null
   before_photo_taken_at: string | null
@@ -102,9 +102,12 @@ export interface WorkerReport {
   total_completed: number
   total_pending: number
   total_delayed: number
+  total_under_review: number
   completion_rate: number
   completed_this_week: number
   completed_this_month: number
-  recent_completed: TaskAssignment[]
-  recent_delayed: TaskAssignment[]
+  recent_completed: Task[]
+  recent_delayed: Task[]
+  recent_under_review: Task[]
+  all_tasks: Task[]
 }

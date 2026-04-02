@@ -8,8 +8,8 @@ import EmptyState from '@/components/EmptyState'
 import { isToday, parseISO } from 'date-fns'
 
 export default function NotificationsPage() {
-  const { worker } = useAuth()
-  const { notifications, unreadCount, loading, markRead, markAllNotificationsRead } = useNotifications(worker?.id)
+  const { session } = useAuth()
+  const { notifications, unreadCount, loading, markRead, markAllNotificationsRead } = useNotifications(session?.user?.id)
 
   const todayNotifs = notifications.filter((n) => isToday(parseISO(n.created_at)))
   const earlierNotifs = notifications.filter((n) => !isToday(parseISO(n.created_at)))

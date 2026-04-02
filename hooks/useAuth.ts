@@ -34,7 +34,21 @@ export function useAuth() {
           // Check local custom session for backwards compatibility
           const stored = localStorage.getItem('mock_session')
           if (stored) {
-            setSession(JSON.parse(stored))
+            try {
+              const parsed = JSON.parse(stored)
+              const userId = parsed?.user?.id
+              const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
+              
+              if (isUUID) {
+                setSession(parsed)
+              } else {
+                // If it's not a UUID, they carried over a mock session to live mode
+                localStorage.removeItem('mock_session')
+                setSession(null)
+              }
+            } catch (e) {
+              localStorage.removeItem('mock_session')
+            }
           }
         }
         setLoading(false)

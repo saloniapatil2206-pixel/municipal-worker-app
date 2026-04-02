@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
@@ -27,7 +27,8 @@ function fmt(date: Date) {
 
 export default function CalendarPage() {
   const router = useRouter()
-  const today = new Date()
+  // Memoize today so it doesn't trigger infinite re-renders in useCallback
+  const today = useMemo(() => new Date(), [])
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [tasksByDate, setTasksByDate] = useState<{ [date: string]: Task[] }>({})
@@ -57,7 +58,8 @@ export default function CalendarPage() {
       }
       const { fetchCalendarTasks } = await import('@/services/calendar.service')
       const session = JSON.parse(localStorage.getItem('mock_session') || '{}')
-      const data = await fetchCalendarTasks(session?.user?.id, year, month)
+      const workerId = session?.user?.id || 'mock-worker-001'
+      const data = await fetchCalendarTasks(workerId, year, month)
       setTasksByDate(data)
     } catch (err: any) {
       toast.error('Failed to load calendar tasks')
@@ -180,12 +182,14 @@ export default function CalendarPage() {
             >
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm font-semibold text-gray-800 flex-1 pr-2">{task.title}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                  task.status === 'delayed' ? 'bg-red-100 text-red-700' :
-                    task.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
-                      task.status === 'accepted' ? 'bg-indigo-100 text-indigo-700' :
-                        'bg-blue-100 text-blue-700'
-                  }`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                  task.status === 'completed' || task.status === 'approved' || task.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                  task.status === 'pending_review' ? 'bg-purple-100 text-purple-700' :
+                  task.status === 'delayed' || task.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                  task.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
+                  task.status === 'accepted' ? 'bg-indigo-100 text-indigo-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
                   {task.status.replace('_', ' ')}
                 </span>
               </div>

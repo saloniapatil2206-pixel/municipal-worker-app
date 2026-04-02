@@ -10,12 +10,12 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function ProtectedLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { session, worker, loading } = useAuth()
-  const { unreadCount } = useNotifications(worker?.id)
+  const { session, loading } = useAuth()
+  const { unreadCount } = useNotifications(session?.user?.id)
 
   useEffect(() => {
     if (!loading && !session) {
-      router.replace('/login')
+      router.replace('/')
     }
   }, [session, loading, router])
 

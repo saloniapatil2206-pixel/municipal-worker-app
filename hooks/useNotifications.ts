@@ -42,7 +42,7 @@ export function useNotifications(workerId: string | undefined): UseNotifications
   useEffect(() => { load() }, [load])
 
   const markRead = async (id: string) => {
-    await markNotificationRead(id)
+    await markNotificationRead(id, workerId)
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n))
     setUnreadCount((c) => Math.max(0, c - 1))
   }

@@ -267,7 +267,7 @@ export default function ProfilePage() {
       <button
         onClick={() => {
           localStorage.removeItem('mock_session')
-          window.location.href = '/login'
+          window.location.href = '/'
         }}
         className="w-full mt-3 border border-red-200 text-red-500 font-semibold py-3 rounded-xl"
       >

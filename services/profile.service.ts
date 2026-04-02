@@ -9,7 +9,7 @@ export async function fetchProfile(userId: string) {
   const { supabase } = await import('@/lib/supabase')
   const { data, error } = await supabase
     .from('profiles')
-    .select('*, worker:workers(*)')
+    .select('*')
     .eq('id', userId)
     .single()
   if (error) throw new Error(error.message)
@@ -45,10 +45,10 @@ export async function uploadProfilePhoto(userId: string, file: File) {
   const ext = file.name.split('.').pop()
   const path = `profiles/${userId}/avatar.${ext}`
   const { error: uploadError } = await supabase.storage
-    .from('profile-photos')
+    .from('photos')
     .upload(path, file, { upsert: true })
   if (uploadError) throw new Error(uploadError.message)
-  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path)
+  const { data } = supabase.storage.from('photos').getPublicUrl(path)
   await supabase.from('profiles').update({ profile_photo: data.publicUrl }).eq('id', userId)
   return data.publicUrl
 }

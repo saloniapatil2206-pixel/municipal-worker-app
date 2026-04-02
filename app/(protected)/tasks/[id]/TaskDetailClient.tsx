@@ -21,7 +21,8 @@ import Image from 'next/image'
 
 export function TaskDetailClient({ id }: { id: string }) {
   const router = useRouter()
-  const { worker } = useAuth()
+  const { session } = useAuth()
+  const workerId = session?.user?.id
 
   const [detail, setDetail] = useState<TaskDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,11 +33,15 @@ export function TaskDetailClient({ id }: { id: string }) {
   const [showCamera, setShowCamera] = useState(false)
   const [cameraMode, setCameraMode] = useState<'BEFORE' | 'AFTER'>('BEFORE')
 
+  const [localBefore, setLocalBefore] = useState<{ dataUrl: string; metadata: any } | null>(null)
+  const [localAfter, setLocalAfter] = useState<{ dataUrl: string; metadata: any } | null>(null)
+  const [resolutionNotes, setResolutionNotes] = useState('')
+
   const loadDetail = useCallback(async () => {
-    if (!id || !worker?.id) return
+    if (!id || !workerId) return
     setLoading(true)
     try {
-      const data = await fetchTaskById(id, worker.id)
+      const data = await fetchTaskById(id, workerId)
       setDetail(data)
       setPhotos(data.photos)
     } catch (err) {
@@ -44,7 +49,7 @@ export function TaskDetailClient({ id }: { id: string }) {
     } finally {
       setLoading(false)
     }
-  }, [id, worker?.id])
+  }, [id, workerId])
 
   useEffect(() => { loadDetail() }, [loadDetail])
 
@@ -56,24 +61,13 @@ export function TaskDetailClient({ id }: { id: string }) {
     </div>
   )
 
-  const handlePhotoCapture = async (dataUrl: string, metadata: any) => {
-    if (!id || !worker?.id) return
-    setActionLoading(true)
-    try {
-      if (cameraMode === 'BEFORE') {
-        await workerService.submitBeforePhoto(id, worker.id, dataUrl, metadata)
-        toast.success('Before photo captured and task started!')
-      } else {
-        await workerService.submitAfterPhoto(id, worker.id, dataUrl, metadata, metadata.resolutionNotes || '')
-        toast.success('After photo captured and task completed!')
-      }
-      setShowCamera(false)
-      loadDetail() // Refresh task status and photos
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to submit photo')
-    } finally {
-      setActionLoading(false)
+  const handlePhotoCapture = (dataUrl: string, metadata: any) => {
+    if (cameraMode === 'BEFORE') {
+      setLocalBefore({ dataUrl, metadata })
+    } else {
+      setLocalAfter({ dataUrl, metadata })
     }
+    setShowCamera(false)
   }
 
   const openCamera = (mode: 'BEFORE' | 'AFTER') => {
@@ -90,7 +84,8 @@ export function TaskDetailClient({ id }: { id: string }) {
   const handleAccept = async () => {
     setActionLoading(true)
     try {
-      await acceptTask(task.id, worker!.id)
+      if (!workerId) throw new Error('Not authenticated')
+      await acceptTask(task.id, workerId)
       toast.success('Task accepted!')
       await loadDetail()
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Error') }
@@ -100,29 +95,52 @@ export function TaskDetailClient({ id }: { id: string }) {
   const handleStart = async () => {
     setActionLoading(true)
     try {
-      await startTask(task.id, worker!.id)
+      if (!workerId) throw new Error('Not authenticated')
+      await startTask(task.id, workerId)
       toast.success('Task started!')
       await loadDetail()
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Error') }
     finally { setActionLoading(false) }
   }
 
-  const handleComplete = async () => {
+  const handleSubmitReport = async () => {
+    if (!localAfter && !afterPhoto) {
+      toast.error('After photo is required to submit report.')
+      return
+    }
+    if (!localBefore && !beforePhoto) {
+      toast.error('Before photo is required to submit report.')
+      return
+    }
+    
     setActionLoading(true)
     try {
-      await completeTask(task.id, worker!.id, workNote || undefined)
-      toast.success('Task completed! 🎉')
-      setWorkNote('')
+      const beforePayload = localBefore ? { dataUrl: localBefore.dataUrl, metadata: localBefore.metadata } : null
+      const afterPayload = localAfter ? { dataUrl: localAfter.dataUrl, metadata: localAfter.metadata, resolutionNotes } : null
+      
+      // We pass non-null after payload assuming localAfter exists. 
+      // If they already had afterPhoto (rare), we don't need to re-upload but we assume they are uploading it now.
+      if (!afterPayload) throw new Error('Missing after photo contents to finalize task.')
+
+      if (!workerId) throw new Error('Not authenticated')
+      await workerService.completeTaskWithPhotos(task.id, workerId, beforePayload, afterPayload)
+      toast.success('Task completed with verification! 🎉')
+      setLocalBefore(null)
+      setLocalAfter(null)
       await loadDetail()
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Error') }
-    finally { setActionLoading(false) }
+    } catch (err: any) {
+      toast.error(err.message || 'Error completing task')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const handleSaveNote = async () => {
     if (!workNote.trim()) { toast.error('Note cannot be empty'); return }
     setActionLoading(true)
     try {
-      await addWorkNote(task.id, worker!.id, workNote)
+      if (!workerId) throw new Error('Not authenticated')
+      await addWorkNote(task.id, workerId, workNote)
       toast.success('Note saved')
       setWorkNote('')
       await loadDetail()
@@ -133,7 +151,8 @@ export function TaskDetailClient({ id }: { id: string }) {
   const handleResume = async () => {
     setActionLoading(true)
     try {
-      await updateTaskStatus(task.id, worker!.id, 'in_progress', 'Task resumed')
+      if (!workerId) throw new Error('Not authenticated')
+      await updateTaskStatus(task.id, workerId, 'in_progress', 'Task resumed')
       toast.success('Task resumed')
       await loadDetail()
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Error') }
@@ -250,13 +269,19 @@ export function TaskDetailClient({ id }: { id: string }) {
           <div className="grid grid-cols-1 gap-4">
             {/* Before Photo */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Before Photo</p>
-              {beforePhoto ? (
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Before the work</p>
+              {beforePhoto || localBefore ? (
                 <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-inner bg-gray-100">
-                  <Image src={beforePhoto.photo_url} alt="Before Work" fill className="object-cover" />
+                  <Image src={beforePhoto?.photo_url || localBefore?.dataUrl || ''} alt="Before Work" fill className="object-cover" />
                   <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full">
                     <CheckCheck className="w-3 h-3" />
                   </div>
+                  {localBefore && (
+                    <button 
+                      onClick={() => setLocalBefore(null)} 
+                      className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs"
+                    >Retake</button>
+                  )}
                 </div>
               ) : (
                 <button 
@@ -267,31 +292,37 @@ export function TaskDetailClient({ id }: { id: string }) {
                   <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
                     <Camera className="w-5 h-5 text-orange-500" />
                   </div>
-                  <span className="text-xs font-semibold text-gray-600">Take Before Photo</span>
+                  <span className="text-xs font-semibold text-gray-600">Click Before Photo</span>
                 </button>
               )}
             </div>
 
             {/* After Photo */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">After Photo</p>
-              {afterPhoto ? (
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">After the work</p>
+              {afterPhoto || localAfter ? (
                 <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-inner bg-gray-100">
-                  <Image src={afterPhoto.photo_url} alt="After Work" fill className="object-cover" />
+                  <Image src={afterPhoto?.photo_url || localAfter?.dataUrl || ''} alt="After Work" fill className="object-cover" />
                   <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full">
                     <CheckCheck className="w-3 h-3" />
                   </div>
+                  {localAfter && (
+                    <button 
+                      onClick={() => setLocalAfter(null)} 
+                      className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs"
+                    >Retake</button>
+                  )}
                 </div>
               ) : (
                 <button 
                   onClick={() => openCamera('AFTER')}
-                  disabled={actionLoading || !beforePhoto || task.status === 'completed'}
+                  disabled={actionLoading || task.status === 'completed'}
                   className="w-full aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
                     <Camera className="w-5 h-5 text-green-500" />
                   </div>
-                  <span className="text-xs font-semibold text-gray-600">Take After Photo</span>
+                  <span className="text-xs font-semibold text-gray-600">Click After Photo</span>
                 </button>
               )}
             </div>
@@ -349,13 +380,25 @@ export function TaskDetailClient({ id }: { id: string }) {
                   <Clock size={16} /> Mark Delayed
                 </button>
               </div>
+              {localAfter && (
+                <div className="space-y-2 pb-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Resolution Notes</p>
+                  <textarea
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    placeholder="Describe the work done..."
+                    className="w-full bg-white border border-gray-200 p-3 rounded-xl text-sm"
+                    rows={2}
+                  />
+                </div>
+              )}
               <button
-                onClick={handleComplete}
-                disabled={actionLoading}
+                onClick={handleSubmitReport}
+                disabled={actionLoading || (!localAfter && !afterPhoto)}
                 className="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-green-600 transition-colors disabled:opacity-70"
               >
                 {actionLoading ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <CheckCheck size={18} />}
-                Mark Complete
+                Submit Report
               </button>
             </div>
           )}
@@ -397,7 +440,7 @@ export function TaskDetailClient({ id }: { id: string }) {
       {/* Delay Modal */}
       <DelayReasonModal
         taskId={task.id}
-        workerId={worker!.id}
+        workerId={workerId!}
         isOpen={delayModalOpen}
         onClose={() => setDelayModalOpen(false)}
         onSubmit={() => { loadDetail() }}

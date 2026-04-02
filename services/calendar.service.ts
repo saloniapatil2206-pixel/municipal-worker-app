@@ -1,5 +1,6 @@
 import { MOCK_TASKS } from '@/lib/mock-data'
 import { Task } from '@/types'
+import { fetchAssignedTasks } from './task.service'
 
 const isMock = () => process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
 
@@ -31,26 +32,26 @@ export async function fetchCalendarTasks(
     return grouped
   }
 
-  // Real Supabase query
-  const { supabase } = await import('@/lib/supabase')
-  const startDate = new Date(year, month - 1, 1).toISOString()
-  const endDate = new Date(year, month, 0, 23, 59, 59).toISOString()
-
-  const { data, error } = await supabase
-    .from('task_assignments')
-    .select('*, task:tasks(*)')
-    .eq('worker_id', workerId)
-    .gte('task.due_at', startDate)
-    .lte('task.due_at', endDate)
-
-  if (error) throw new Error(error.message)
+  // Real data using unified fetch
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workerId)
+  if (!isUUID) return {}
+  
+  const allTasks = await fetchAssignedTasks(workerId)
 
   const grouped: { [date: string]: Task[] } = {}
-  data?.forEach((assignment: any) => {
-    if (!assignment.task?.due_at) return
-    const date = assignment.task.due_at.split('T')[0]
-    if (!grouped[date]) grouped[date] = []
-    grouped[date].push(assignment.task)
+  
+  allTasks.forEach((task: any) => {
+    const rawDate = task.scheduled_date || task.due_at || task.created_at
+    if (!rawDate) return
+    
+    // Convert timestamp to YYYY-MM-DD
+    const date = rawDate.split('T')[0]
+    const [taskYear, taskMonth] = date.split('-').map(Number)
+    
+    if (taskYear === year && taskMonth === month) {
+      if (!grouped[date]) grouped[date] = []
+      grouped[date].push(task)
+    }
   })
 
   return grouped

@@ -1,13 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, ClipboardList, Calendar, BarChart2, User } from 'lucide-react'
+import { Home, ClipboardList, Calendar, BarChart2, User, BadgeCheck } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV_ITEMS = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/tasks', label: 'Tasks', icon: ClipboardList },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/verified', label: 'Verified', icon: BadgeCheck },
   { href: '/report', label: 'Report', icon: BarChart2 },
   { href: '/profile', label: 'Profile', icon: User },
 ]

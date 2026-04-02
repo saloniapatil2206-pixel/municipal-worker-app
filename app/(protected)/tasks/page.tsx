@@ -71,7 +71,8 @@ function TasksContent() {
       }
       const { fetchAssignedTasks } = await import('@/services/task.service')
       const session = JSON.parse(localStorage.getItem('mock_session') || '{}')
-      const data = await fetchAssignedTasks(session?.user?.id)
+      const workerId = session?.user?.id || 'mock-worker-001'
+      const data = await fetchAssignedTasks(workerId)
       setTasks(data)
     } catch (err: any) {
       toast.error('Failed to load tasks')
