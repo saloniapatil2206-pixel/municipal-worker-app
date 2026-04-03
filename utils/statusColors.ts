@@ -6,6 +6,9 @@ export const statusBadgeClasses: Record<TaskStatus, string> = {
   in_progress: 'bg-amber-100 text-amber-800',
   completed: 'bg-green-100 text-green-800',
   delayed: 'bg-red-100 text-red-800',
+  pending_review: 'bg-purple-100 text-purple-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
 }
 
 export const statusLabels: Record<TaskStatus, string> = {
@@ -14,6 +17,9 @@ export const statusLabels: Record<TaskStatus, string> = {
   in_progress: 'In Progress',
   completed: 'Completed',
   delayed: 'Delayed',
+  pending_review: 'Pending Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
 }
 
 export const priorityBadgeClasses: Record<TaskPriority, string> = {

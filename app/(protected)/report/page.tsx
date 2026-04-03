@@ -254,7 +254,7 @@ export default function ReportPage() {
                 <p className="text-xs text-gray-400">{task.category} · {task.due_at ? new Date(task.due_at).toLocaleDateString('en-IN') : '—'}</p>
               </div>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                task.status === 'completed' || task.status === 'approved' || task.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                task.status === 'completed' || task.status === 'approved' ? 'bg-green-100 text-green-700' :
                 task.status === 'pending_review' ? 'bg-purple-100 text-purple-700' :
                 task.status === 'delayed' || task.status === 'rejected' ? 'bg-red-100 text-red-700' :
                 task.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
