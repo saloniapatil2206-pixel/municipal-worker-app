@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fieldstaff-v1';
+const CACHE_NAME = 'fieldstaff-v2';
 
 // Core assets to cache on install
 const PRECACHE_URLS = [
