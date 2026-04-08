@@ -76,8 +76,8 @@ export default function ReportPage() {
     <div className="p-4 pb-24">
       <Toaster position="top-center" />
 
-      <h1 className="text-xl font-bold text-gray-900 mb-1">Report Card</h1>
-      <p className="text-sm text-gray-500 mb-4">Your performance overview</p>
+      <h1 className="text-xl font-bold text-gray-900 mb-1">Tracking Dashboard</h1>
+      <p className="text-sm text-gray-500 mb-4">Track your tasks and verification status</p>
 
       {/* Metric Cards — clickable → goes to tasks with filter */}
       <div className="grid grid-cols-2 gap-3 mb-5">
@@ -129,7 +129,7 @@ export default function ReportPage() {
       {report.recent_under_review?.length > 0 && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Pending Review</h2>
+            <h2 className="text-sm font-semibold text-gray-700">Verification Pending (Admin Review)</h2>
             <button
               onClick={() => router.push('/tasks?filter=pending_review')}
               className="text-xs text-purple-500 font-medium"

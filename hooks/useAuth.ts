@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { MOCK_WORKER, MOCK_PROFILE } from '@/lib/mock-data'
 
@@ -10,9 +10,34 @@ export function useAuth() {
   const [session, setSession] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [worker, setWorker] = useState<any>(null)
+  const initialized = useRef(false)
 
   useEffect(() => {
+    // Prevent double-initialization in React StrictMode
+    if (initialized.current) return
+    initialized.current = true
+
     const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+
+    // Helper: try to restore session from localStorage
+    const restoreLocalSession = () => {
+      const stored = localStorage.getItem('mock_session')
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          const userId = parsed?.user?.id
+          if (userId) {
+            // Accept any valid user ID (UUID from DB or auto-generated)
+            setSession(parsed)
+            setProfile(parsed.user)
+            return true
+          }
+        } catch (e) {
+          localStorage.removeItem('mock_session')
+        }
+      }
+      return false
+    }
 
     if (isMock) {
       const stored = localStorage.getItem('mock_session')
@@ -25,39 +50,33 @@ export function useAuth() {
       return
     }
 
-    // Real Supabase session check
+    // Real mode: first check localStorage (custom login), then Supabase Auth
+    // The login page uses direct DB lookup and stores session in localStorage,
+    // so localStorage is the primary source of truth.
+    const hasLocal = restoreLocalSession()
+    if (hasLocal) {
+      setLoading(false)
+      return
+    }
+
+    // Fallback: check Supabase Auth session (for users who logged in via Supabase Auth)
     import('@/lib/supabase').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
           setSession(data.session)
-        } else {
-          // Check local custom session for backwards compatibility
-          const stored = localStorage.getItem('mock_session')
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored)
-              const userId = parsed?.user?.id
-              const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
-              
-              if (isUUID) {
-                setSession(parsed)
-              } else {
-                // If it's not a UUID, they carried over a mock session to live mode
-                localStorage.removeItem('mock_session')
-                setSession(null)
-              }
-            } catch (e) {
-              localStorage.removeItem('mock_session')
-            }
-          }
         }
         setLoading(false)
+      }).catch(() => {
+        setLoading(false)
       })
+    }).catch(() => {
+      setLoading(false)
     })
   }, [])
 
   const logout = async () => {
     localStorage.removeItem('mock_session')
+    initialized.current = false
     router.replace('/')
   }
 

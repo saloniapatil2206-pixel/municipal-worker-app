@@ -18,7 +18,7 @@ export interface Worker {
   profile?: Profile
 }
 
-export type TaskStatus = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'delayed' | 'pending_review' | 'approved' | 'rejected'
+export type TaskStatus = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'delayed' | 'pending_review' | 'approved' | 'rejected' | 'resolved' | 'done' | 'closed'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical'
 
 export interface Task {

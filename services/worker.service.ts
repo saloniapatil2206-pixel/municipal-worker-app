@@ -7,10 +7,54 @@ export const workerService = {
   async dualUpdate(id: string, updates: any) {
     const { supabase } = await import('@/lib/supabase')
     const { data } = await supabase.from('tasks').select('id').eq('id', id).single()
+    
+    let targetStatus = updates.status
+
     if (data) {
-      return supabase.from('tasks').update(updates).eq('id', id)
+      // === TASKS table: has all photo columns ===
+      const cleanUpdates: any = {}
+      
+      if (updates.before_photo_url !== undefined) cleanUpdates.before_photo_url = updates.before_photo_url
+      if (updates.before_photo_metadata !== undefined) cleanUpdates.before_photo_metadata = updates.before_photo_metadata
+      if (updates.before_photo_taken_at !== undefined) cleanUpdates.before_photo_taken_at = updates.before_photo_taken_at
+      if (updates.after_photo_url !== undefined) cleanUpdates.after_photo_url = updates.after_photo_url
+      if (updates.after_photo_metadata !== undefined) cleanUpdates.after_photo_metadata = updates.after_photo_metadata
+      if (updates.after_photo_taken_at !== undefined) cleanUpdates.after_photo_taken_at = updates.after_photo_taken_at
+      if (updates.resolution_notes !== undefined) cleanUpdates.resolution_notes = updates.resolution_notes
+      if (updates.resolved_at !== undefined) cleanUpdates.resolved_at = updates.resolved_at
+      if (updates.completed_at !== undefined) cleanUpdates.completed_at = updates.completed_at
+      if (updates.completion_note !== undefined) cleanUpdates.completion_note = updates.completion_note
+      if (updates.updated_at !== undefined) cleanUpdates.updated_at = updates.updated_at
+      
+      if (['completed', 'resolved', 'done'].includes(targetStatus)) targetStatus = 'done'
+      if (targetStatus) cleanUpdates.status = targetStatus
+      
+      console.log('[dualUpdate] Updating TASK', id, cleanUpdates)
+      const res = await supabase.from('tasks').update(cleanUpdates).eq('id', id)
+      if (res.error) {
+        console.error('[dualUpdate] Task update error:', res.error)
+        throw new Error(res.error.message)
+      }
+      return res
     } else {
-      return supabase.from('issues').update(updates).eq('id', id)
+      // === ISSUES table: only has before_photo_url, after_photo_url, status, resolved_at, updated_at ===
+      const issueUpdates: any = {}
+      
+      if (updates.before_photo_url !== undefined) issueUpdates.before_photo_url = updates.before_photo_url
+      if (updates.after_photo_url !== undefined) issueUpdates.after_photo_url = updates.after_photo_url
+      if (updates.resolved_at !== undefined) issueUpdates.resolved_at = updates.resolved_at
+      if (updates.updated_at !== undefined) issueUpdates.updated_at = updates.updated_at
+      
+      if (['completed', 'done', 'resolved'].includes(targetStatus)) targetStatus = 'resolved'
+      if (targetStatus) issueUpdates.status = targetStatus
+
+      console.log('[dualUpdate] Updating ISSUE', id, issueUpdates)
+      const res = await supabase.from('issues').update(issueUpdates).eq('id', id)
+      if (res.error) {
+        console.error('[dualUpdate] Issue update error:', res.error)
+        throw new Error(res.error.message)
+      }
+      return res
     }
   },
   /**
@@ -227,7 +271,7 @@ export const workerService = {
       const { MOCK_TASKS, MOCK_TASK_UPDATES } = await import('@/lib/mock-data')
       const task = MOCK_TASKS.find(t => t.id === taskId)
       if (task) {
-        task.status = 'pending_review'
+        task.status = 'resolved'
         if (before) {
           task.before_photo_url = before.dataUrl
           task.before_photo_metadata = before.metadata
@@ -245,7 +289,7 @@ export const workerService = {
           id: `upd-${Date.now()}`,
           task_id: taskId,
           worker_id: workerId,
-          status: 'pending_review',
+          status: 'resolved',
           note: `Completed work: ${after.resolutionNotes} (Pending Admin Review)`,
           created_at: new Date().toISOString()
         })
@@ -253,6 +297,8 @@ export const workerService = {
       }
       return { success: true }
     }
+
+    console.log('[completeTaskWithPhotos] Starting for task:', taskId, 'worker:', workerId)
 
     const { uploadTaskPhoto } = await import('./photo.service')
     const parseDataUrl = (dataUrl: string, name: string) => {
@@ -265,47 +311,48 @@ export const workerService = {
       return new File([new window.Blob([u8arr], { type: mime })], name, { type: 'image/jpeg' })
     }
 
-    let beforePhotoUrl = undefined
-    let beforePhotoMeta = undefined
-    let beforePhotoTime = undefined
-
-    if (before) {
-      const file = parseDataUrl(before.dataUrl, `before_${taskId}.jpg`)
-      const photo = await uploadTaskPhoto(taskId, workerId, 'before', file)
-      beforePhotoUrl = photo.photo_url
-      beforePhotoMeta = before.metadata
-      beforePhotoTime = new Date().toISOString()
-    }
-
-    let afterPhotoUrl = undefined
-    let afterPhotoMeta = undefined
-    let afterPhotoTime = undefined
-
-    if (after) {
-      const file = parseDataUrl(after.dataUrl, `after_${taskId}.jpg`)
-      const photo = await uploadTaskPhoto(taskId, workerId, 'after', file)
-      afterPhotoUrl = photo.photo_url
-      afterPhotoMeta = after.metadata
-      afterPhotoTime = new Date().toISOString()
-    }
-
     const updatePayload: any = {
-      after_photo_url: afterPhotoUrl,
-      after_photo_metadata: afterPhotoMeta,
-      after_photo_taken_at: afterPhotoTime,
       resolved_at: new Date().toISOString(),
-      resolution_notes: after.resolutionNotes,
-      status: 'pending_review',
+      resolution_notes: after.resolutionNotes || '',
+      completion_note: after.resolutionNotes || '',
+      completed_at: new Date().toISOString(),
+      status: 'done',
       updated_at: new Date().toISOString()
     }
 
-    if (beforePhotoUrl) {
-      updatePayload.before_photo_url = beforePhotoUrl
-      updatePayload.before_photo_metadata = beforePhotoMeta
-      updatePayload.before_photo_taken_at = beforePhotoTime
+    // Upload before photo if provided
+    if (before) {
+      try {
+        console.log('[completeTaskWithPhotos] Uploading before photo...')
+        const file = parseDataUrl(before.dataUrl, `before_${taskId}.jpg`)
+        const photo = await uploadTaskPhoto(taskId, workerId, 'before', file)
+        updatePayload.before_photo_url = photo.photo_url
+        updatePayload.before_photo_metadata = before.metadata
+        updatePayload.before_photo_taken_at = new Date().toISOString()
+        console.log('[completeTaskWithPhotos] Before photo uploaded:', photo.photo_url)
+      } catch (err: any) {
+        console.error('[completeTaskWithPhotos] Before photo upload failed:', err.message)
+        // Continue — before photo is optional
+      }
     }
 
+    // Upload after photo (required)
+    try {
+      console.log('[completeTaskWithPhotos] Uploading after photo...')
+      const file = parseDataUrl(after.dataUrl, `after_${taskId}.jpg`)
+      const photo = await uploadTaskPhoto(taskId, workerId, 'after', file)
+      updatePayload.after_photo_url = photo.photo_url
+      updatePayload.after_photo_metadata = after.metadata
+      updatePayload.after_photo_taken_at = new Date().toISOString()
+      console.log('[completeTaskWithPhotos] After photo uploaded:', photo.photo_url)
+    } catch (err: any) {
+      console.error('[completeTaskWithPhotos] After photo upload failed:', err.message)
+      throw new Error('Failed to upload after photo: ' + err.message)
+    }
+
+    console.log('[completeTaskWithPhotos] Updating DB with payload:', updatePayload)
     await this.dualUpdate(taskId, updatePayload)
+    console.log('[completeTaskWithPhotos] DB update complete')
     return { success: true }
   },
 

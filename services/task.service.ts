@@ -37,13 +37,15 @@ export async function fetchAssignedTasks(workerId: string): Promise<Task[]> {
   let tasksQuery = supabase.from('tasks').select('*')
   let issuesQuery = supabase.from('issues').select('*')
 
-  if (profile?.sector && profile?.assigned_zone) {
-    // Tasks: staff_id = workerId OR (sector = workerSector AND assigned_zone = workerZone)
-    tasksQuery = tasksQuery.or(`staff_id.eq.${workerId},and(sector.eq.${profile.sector},assigned_zone.eq.${profile.assigned_zone})`)
-    // Issues: assigned_to = workerId OR (sector = workerSector AND assigned_zone = workerZone)
-    issuesQuery = issuesQuery.or(`assigned_to.eq.${workerId},and(sector.eq.${profile.sector},assigned_zone.eq.${profile.assigned_zone})`)
+  const workerSector = profile?.sector || profile?.assigned_zone
+
+  if (workerSector) {
+    // Tasks: staff_id = workerId OR sector = workerSector
+    tasksQuery = tasksQuery.or(`staff_id.eq.${workerId},sector.eq.${workerSector}`)
+    // Issues: assigned_to = workerId OR sector = workerSector
+    issuesQuery = issuesQuery.or(`assigned_to.eq.${workerId},sector.eq.${workerSector}`)
   } else {
-    // Fallback if no sector AND zone: Only fetch personal explicitly assigned tasks
+    // Fallback if no sector: Only fetch personal explicitly assigned tasks
     tasksQuery = tasksQuery.eq('staff_id', workerId)
     issuesQuery = issuesQuery.eq('assigned_to', workerId)
   }
@@ -115,10 +117,46 @@ export async function fetchTaskById(taskId: string, workerId: string): Promise<T
 async function dualUpdate(taskId: string, updates: any) {
   const { supabase } = await import('@/lib/supabase')
   const { data } = await supabase.from('tasks').select('id').eq('id', taskId).single()
+  
+  let targetStatus = updates.status
+
   if (data) {
-    await supabase.from('tasks').update(updates).eq('id', taskId)
+    // === TASKS table ===
+    const cleanUpdates: any = {}
+    
+    if (updates.before_photo_url !== undefined) cleanUpdates.before_photo_url = updates.before_photo_url
+    if (updates.before_photo_metadata !== undefined) cleanUpdates.before_photo_metadata = updates.before_photo_metadata
+    if (updates.before_photo_taken_at !== undefined) cleanUpdates.before_photo_taken_at = updates.before_photo_taken_at
+    if (updates.after_photo_url !== undefined) cleanUpdates.after_photo_url = updates.after_photo_url
+    if (updates.after_photo_metadata !== undefined) cleanUpdates.after_photo_metadata = updates.after_photo_metadata
+    if (updates.after_photo_taken_at !== undefined) cleanUpdates.after_photo_taken_at = updates.after_photo_taken_at
+    if (updates.resolution_notes !== undefined) cleanUpdates.resolution_notes = updates.resolution_notes
+    if (updates.resolved_at !== undefined) cleanUpdates.resolved_at = updates.resolved_at
+    if (updates.completed_at !== undefined) cleanUpdates.completed_at = updates.completed_at
+    if (updates.completion_note !== undefined) cleanUpdates.completion_note = updates.completion_note
+    if (updates.updated_at !== undefined) cleanUpdates.updated_at = updates.updated_at
+    
+    if (['completed', 'resolved', 'done'].includes(targetStatus)) targetStatus = 'done'
+    if (targetStatus) cleanUpdates.status = targetStatus
+    
+    const res = await supabase.from('tasks').update(cleanUpdates).eq('id', taskId)
+    if (res.error) throw new Error(res.error.message)
+    return res
   } else {
-    await supabase.from('issues').update(updates).eq('id', taskId)
+    // === ISSUES table ===
+    const issueUpdates: any = {}
+    
+    if (updates.before_photo_url !== undefined) issueUpdates.before_photo_url = updates.before_photo_url
+    if (updates.after_photo_url !== undefined) issueUpdates.after_photo_url = updates.after_photo_url
+    if (updates.resolved_at !== undefined) issueUpdates.resolved_at = updates.resolved_at
+    if (updates.updated_at !== undefined) issueUpdates.updated_at = updates.updated_at
+    
+    if (['completed', 'done', 'resolved'].includes(targetStatus)) targetStatus = 'resolved'
+    if (targetStatus) issueUpdates.status = targetStatus
+
+    const res = await supabase.from('issues').update(issueUpdates).eq('id', taskId)
+    if (res.error) throw new Error(res.error.message)
+    return res
   }
 }
 

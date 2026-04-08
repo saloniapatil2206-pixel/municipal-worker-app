@@ -44,13 +44,17 @@ export async function fetchCalendarTasks(
     const rawDate = task.scheduled_start || task.scheduled_date || task.due_at || task.created_at
     if (!rawDate) return
     
-    // Convert timestamp to YYYY-MM-DD
-    const date = rawDate.split('T')[0]
-    const [taskYear, taskMonth] = date.split('-').map(Number)
+    // Convert to Date object to handle any format predictably
+    const dateObj = new Date(rawDate)
+    if (isNaN(dateObj.getTime())) return
+    
+    const taskYear = dateObj.getFullYear()
+    const taskMonth = dateObj.getMonth() + 1
+    const dateStr = `${taskYear}-${String(taskMonth).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`
     
     if (taskYear === year && taskMonth === month) {
-      if (!grouped[date]) grouped[date] = []
-      grouped[date].push(task)
+      if (!grouped[dateStr]) grouped[dateStr] = []
+      grouped[dateStr].push(task)
     }
   })
 

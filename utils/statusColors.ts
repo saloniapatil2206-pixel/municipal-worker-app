@@ -9,6 +9,9 @@ export const statusBadgeClasses: Record<TaskStatus, string> = {
   pending_review: 'bg-purple-100 text-purple-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
+  done: 'bg-green-100 text-green-800',
+  resolved: 'bg-teal-100 text-teal-800',
+  closed: 'bg-gray-100 text-gray-800',
 }
 
 export const statusLabels: Record<TaskStatus, string> = {
@@ -20,6 +23,9 @@ export const statusLabels: Record<TaskStatus, string> = {
   pending_review: 'Pending Review',
   approved: 'Approved',
   rejected: 'Rejected',
+  done: 'Done',
+  resolved: 'Resolved',
+  closed: 'Closed',
 }
 
 export const priorityBadgeClasses: Record<TaskPriority, string> = {

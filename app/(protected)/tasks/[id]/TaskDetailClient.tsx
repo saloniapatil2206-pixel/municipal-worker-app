@@ -116,21 +116,26 @@ export function TaskDetailClient({ id }: { id: string }) {
     setActionLoading(true)
     try {
       const beforePayload = localBefore ? { dataUrl: localBefore.dataUrl, metadata: localBefore.metadata } : null
-      const afterPayload = localAfter ? { dataUrl: localAfter.dataUrl, metadata: localAfter.metadata, resolutionNotes } : null
+      const afterPayload = localAfter ? { dataUrl: localAfter.dataUrl, metadata: localAfter.metadata, resolutionNotes: resolutionNotes || 'Work completed' } : null
       
-      // We pass non-null after payload assuming localAfter exists. 
-      // If they already had afterPhoto (rare), we don't need to re-upload but we assume they are uploading it now.
       if (!afterPayload) throw new Error('Missing after photo contents to finalize task.')
-
       if (!workerId) throw new Error('Not authenticated')
+      
+      console.log('[handleSubmitReport] Submitting report for task:', task.id, 'worker:', workerId)
       await workerService.completeTaskWithPhotos(task.id, workerId, beforePayload, afterPayload)
-      toast.success('Task completed with verification! 🎉')
+      console.log('[handleSubmitReport] Report submitted successfully')
+      
+      toast.success('Verification submitted! Redirecting to tracking...')
       setLocalBefore(null)
       setLocalAfter(null)
-      await loadDetail()
+      
+      // Redirect after success
+      setTimeout(() => {
+        router.push('/report')
+      }, 1200)
     } catch (err: any) {
+      console.error('[handleSubmitReport] Error:', err)
       toast.error(err.message || 'Error completing task')
-    } finally {
       setActionLoading(false)
     }
   }
@@ -286,8 +291,8 @@ export function TaskDetailClient({ id }: { id: string }) {
               ) : (
                 <button 
                   onClick={() => openCamera('BEFORE')}
-                  disabled={actionLoading || task.status === 'completed'}
-                  className="w-full aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                  disabled={actionLoading || ['completed', 'done', 'resolved', 'pending_review', 'approved', 'closed'].includes(task.status)}
+                  className="w-full aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
                     <Camera className="w-5 h-5 text-orange-500" />
@@ -316,7 +321,7 @@ export function TaskDetailClient({ id }: { id: string }) {
               ) : (
                 <button 
                   onClick={() => openCamera('AFTER')}
-                  disabled={actionLoading || task.status === 'completed'}
+                  disabled={actionLoading || ['completed', 'done', 'resolved', 'pending_review', 'approved', 'closed'].includes(task.status)}
                   className="w-full aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
@@ -419,11 +424,19 @@ export function TaskDetailClient({ id }: { id: string }) {
             </div>
           )}
 
-          {task.status === 'completed' && (
+          {['completed', 'done', 'resolved', 'pending_review'].includes(task.status) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+              <Clock size={28} className="text-amber-500 mx-auto mb-2" />
+              <p className="text-amber-700 font-bold">Verification Pending</p>
+              <p className="text-amber-600 text-sm mt-1">Your report has been submitted. The work is being verified by the admin.</p>
+            </div>
+          )}
+
+          {['approved', 'closed'].includes(task.status) && (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
               <CheckCheck size={28} className="text-green-500 mx-auto mb-2" />
-              <p className="text-green-700 font-bold">Task Completed</p>
-              <p className="text-green-600 text-sm mt-1">Great work! This task has been marked as done.</p>
+              <p className="text-green-700 font-bold">Task Completed & Verified</p>
+              <p className="text-green-600 text-sm mt-1">Great work! The admin has verified and approved this task.</p>
             </div>
           )}
         </section>
