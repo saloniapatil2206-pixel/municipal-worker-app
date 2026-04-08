@@ -68,6 +68,7 @@ export async function fetchAssignedTasks(workerId: string): Promise<Task[]> {
 
   const normalizedTasks = (tasksData || []).map((task: any) => ({
     ...task,
+    due_at: task.due_at || task.scheduled_start || task.scheduled_date || task.created_at,
     item_type: 'task'
   }))
 

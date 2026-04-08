@@ -6,6 +6,7 @@ import { Search, Filter, MapPin, Clock, AlertTriangle } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { MOCK_TASKS } from '@/lib/mock-data'
 import { Task } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
@@ -44,6 +45,8 @@ function TasksContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlFilter = searchParams.get('filter') || 'all'
+  const { session } = useAuth()
+  const workerId = session?.user?.id
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,8 +60,8 @@ function TasksContent() {
   }, [searchParams])
 
   useEffect(() => {
-    loadTasks()
-  }, [])
+    if (workerId) loadTasks()
+  }, [workerId])
 
   async function loadTasks() {
     try {
@@ -69,9 +72,8 @@ function TasksContent() {
         setTasks(MOCK_TASKS)
         return
       }
+      if (!workerId) return
       const { fetchAssignedTasks } = await import('@/services/task.service')
-      const session = JSON.parse(localStorage.getItem('mock_session') || '{}')
-      const workerId = session?.user?.id || 'mock-worker-001'
       const data = await fetchAssignedTasks(workerId)
       setTasks(data)
     } catch (err: any) {

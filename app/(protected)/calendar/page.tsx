@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 import { MOCK_TASKS } from '@/lib/mock-data'
 import { Task } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 function getCalendarDays(year: number, month: number) {
   const firstDay = new Date(year, month - 1, 1)
@@ -27,6 +28,8 @@ function fmt(date: Date) {
 
 export default function CalendarPage() {
   const router = useRouter()
+  const { session, loading: authLoading } = useAuth()
+  const workerId = session?.user?.id
   // Memoize today so it doesn't trigger infinite re-renders in useCallback
   const today = useMemo(() => new Date(), [])
   const [year, setYear] = useState(today.getFullYear())
@@ -36,6 +39,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
 
   const loadTasks = useCallback(async () => {
+    if (!workerId) return
     try {
       setLoading(true)
       const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
@@ -57,16 +61,15 @@ export default function CalendarPage() {
         return
       }
       const { fetchCalendarTasks } = await import('@/services/calendar.service')
-      const session = JSON.parse(localStorage.getItem('mock_session') || '{}')
-      const workerId = session?.user?.id || 'mock-worker-001'
       const data = await fetchCalendarTasks(workerId, year, month)
       setTasksByDate(data)
     } catch (err: any) {
+      console.error('Calendar load error:', err)
       toast.error('Failed to load calendar tasks')
     } finally {
       setLoading(false)
     }
-  }, [year, month, today])
+  }, [year, month, today, workerId])
 
   useEffect(() => {
     loadTasks()
